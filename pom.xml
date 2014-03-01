@@ -1,0 +1,186 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.javaetmoi.samples</groupId>
+  <version>1.0-SNAPSHOT</version>
+  <artifactId>jasmine-test-webapp</artifactId>
+  <name>JavaEtMoi Samples :: ${project.artifactId} - ${project.packaging}</name>
+  <packaging>war</packaging>
+  <description>Maven configuration to test JavaScript code of a Java web app with Jasmine et PhantomJS</description>
+  <inceptionYear>2014</inceptionYear>
+  <url>https://github.com/arey/js-test-webapp</url>
+
+  <build>
+    <plugins>
+      <!-- Jasmine Maven Plugin -->
+      <plugin>
+        <groupId>com.github.searls</groupId>
+        <artifactId>jasmine-maven-plugin</artifactId>
+        <version>1.3.1.4</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <jsSrcDir>${project.basedir}/src/main/webapp/static/js</jsSrcDir>
+          <jsTestSrcDir>${project.basedir}/src/test/javascript</jsTestSrcDir>
+          <browserVersion>FIREFOX_17</browserVersion>
+          <skipJasmineTests>false</skipJasmineTests>
+          <webDriverClassName>${jasmine.driver.classname}</webDriverClassName>
+          <webDriverCapabilities>
+            <capability>
+              <name>phantomjs.binary.path</name>
+              <value>${jasmine.driver.path}</value>
+            </capability>
+          </webDriverCapabilities>
+          <preloadSources>
+            <source>/lib/jquery-2.1.0.min.js</source>
+          </preloadSources>
+          <!-- Coverage -->
+          <keepServerAlive>true</keepServerAlive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.github.timurstrekalov</groupId>
+        <artifactId>saga-maven-plugin</artifactId>
+        <version>1.5.2</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>coverage</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <baseDir>http://localhost:${jasmine.serverPort}</baseDir>
+          <outputDir>${project.build.directory}/coverage</outputDir>
+          <noInstrumentPatterns>
+            <pattern>.*/spec/.*</pattern> <!-- Don't instrument specs -->
+            <pattern>.*/lib/.*</pattern>  <!-- Don't instrument third librairies -->
+          </noInstrumentPatterns>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- HtmlUnit Profile -->
+    <profile>
+      <id>htmlUnit</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <jasmine.driver.classname>org.openqa.selenium.htmlunit.HtmlUnitDriver</jasmine.driver.classname>
+        <jasmine.driver.path />
+      </properties>
+    </profile>
+
+    <!-- PhantomJS for Windows -->
+    <profile>
+      <id>phantomJS-windows</id>
+      <activation>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <properties>
+        <phantomjs.classifier>windows</phantomjs.classifier>
+        <phantomjs.bin>phantomjs.exe</phantomjs.bin>
+        <phantomjs.packaging>zip</phantomjs.packaging>
+      </properties>
+    </profile>
+
+    <!-- PhantomJS for MacOSX -->
+    <profile>
+      <id>phantomJS-macosx</id>
+      <activation>
+        <os>
+          <family>mac</family>
+        </os>
+      </activation>
+      <properties>
+        <phantomjs.classifier>macosx</phantomjs.classifier>
+        <phantomjs.bin>bin/phantomjs</phantomjs.bin>
+        <phantomjs.packaging>zip</phantomjs.packaging>
+      </properties>
+    </profile>
+
+    <!-- PhantomJS for Linux -->
+    <profile>
+      <id>phantomJS-linux</id>
+      <activation>
+        <os>
+          <arch>x86</arch>
+          <family>linux</family>
+        </os>
+      </activation>
+      <properties>
+        <phantomjs.classifier>linux-x86_64</phantomjs.classifier>
+        <phantomjs.bin>bin/phantomjs</phantomjs.bin>
+        <phantomjs.packaging>tar.bz2</phantomjs.packaging>
+      </properties>
+    </profile>
+
+
+    <!-- PhantomJS Profile -->
+    <profile>
+      <id>phantomJS</id>
+      <properties>
+        <!-- Plugin permettant d'exécuter des tests JavaScript -->
+        <phantomjs.version>1.9.7</phantomjs.version>
+        <jasmine.driver.classname>org.openqa.selenium.phantomjs.PhantomJSDriver</jasmine.driver.classname>
+        <jasmine.driver.dir>${project.build.directory}</jasmine.driver.dir>
+        <jasmine.driver.path>${jasmine.driver.dir}/phantomjs-${phantomjs.version}-${phantomjs.classifier}/${phantomjs.bin}</jasmine.driver.path>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>unpack</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.phantomjs</groupId>
+                      <artifactId>phantomjs</artifactId>
+                      <version>${phantomjs.version}</version>
+                      <type>${phantomjs.packaging}</type>
+                      <classifier>${phantomjs.classifier}</classifier>
+                      <outputDirectory>${jasmine.driver.dir}</outputDirectory>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <repositories>
+    <!-- Cloudbees maven repositories for download PhantomJS artefacts -->
+    <repository>
+      <id>javaetmoi-cloudbees-release</id>
+      <name>javaetmoi-cloudbees-release</name>
+      <url>https://repository-javaetmoi.forge.cloudbees.com/release/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+</project>
